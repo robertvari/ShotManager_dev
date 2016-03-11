@@ -41,6 +41,9 @@ class CreateShotWindow(QtGui.QDialog):
         shotRangeField = QtGui.QLineEdit()
         createShot_bttn = QtGui.QPushButton("Create Shot")
 
+
+        self.assetsTree.headerItem().setText(0, "Assets")
+
         # add items to layout
         gridlayout.addWidget(shotNumber_lbl, 0,0)
         gridlayout.addWidget(shotNumberField, 0,1)
@@ -88,4 +91,5 @@ class CreateShotWindow(QtGui.QDialog):
         self.addAssetField.setText("")
 
         # add asset to TreeView if not there
-        print assetName,
+        assetItem = QtGui.QTreeWidgetItem(self.assetsTree)
+        self.assetsTree.topLevelItem(0).setText(0, assetName)
