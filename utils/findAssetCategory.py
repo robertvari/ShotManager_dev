@@ -4,6 +4,10 @@ import config
 reload(config)
 
 def findCategory(assetName):
+    # handle if asset is a duplicated reference
+    if "{" in assetName:
+        assetName = assetName.split("{")[0]
+
     assetPaths = config.assetPaths
 
     with open(assetPaths) as data_file:
