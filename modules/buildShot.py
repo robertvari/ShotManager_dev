@@ -4,6 +4,12 @@ import os
 from ..utils import config
 from ..utils import jsonReader
 from ..utils import findAssetCategory
+from ..utils import getShotData
+from ..utils import shotCam
+import importAnim
+reload(shotCam)
+reload(importAnim)
+reload(getShotData)
 reload(findAssetCategory)
 reload(jsonReader)
 reload(config)
@@ -21,19 +27,26 @@ def buildShot(shotList, assetList, shotStateCombo):
         if not mc.objExists(value):
             mc.group(name=value, empty=True)
 
-    # load assets
-    getAssets(shotList, assetList, shotState)
-
     # create shotCamera
     shotNumber = shotList.currentItem().text()
     camName = "shot_" + str(shotNumber)
+    camera = shotCam.shotCam(camName, groupNames["camGroup"])
 
-    shotCam = mc.camera()[0]
-    mc.parent(shotCam, groupNames["camGroup"])
-    mc.rename(shotCam, camName)
+    # import camera anim
+    shotRootFolder = config.rootFolder + shotNumber + "/_anim/" + "camera/"
+    importAnim.importAnim(shotRootFolder, camera)
+
+    # set viewport to camera
+    try:
+        mc.modelEditor( "modelPanel4", edit=True, camera=camera )
+    except:
+        pass
+
+    # load assets
+    getAssets(shotList, assetList, shotState)
 
     # set time range
-    shotData = getShotData(shotList)
+    shotData = getShotData.getShotData(shotList)
     animStart = shotData["shotRange"].split("-")[0]
     animEnd = shotData["shotRange"].split("-")[1]
 
@@ -57,18 +70,10 @@ def addAssetToScene(shotList, assetList, shotStateCombo):
     else:
         mc.warning("First you have to build a shot.")
 
-def getShotData(shotList):
-    # get shot data
-    shotNumber = shotList.currentItem().text()
-    shotRootFolder = config.rootFolder + shotNumber + "/"
-    shotDataFile = shotRootFolder + "_shotData/shotData.json"
-    shotData = jsonReader.jsonRead(shotDataFile)
-
-    return shotData
-
 def getAssets(shotList, assetList, shotState):
     # get shot data
     shotNumber = shotList.currentItem().text()
+
     shotRootFolder = config.rootFolder + shotNumber + "/"
     shotDataFile = shotRootFolder + "_shotData/shotData.json"
     shotData = jsonReader.jsonRead(shotDataFile)
@@ -106,10 +111,13 @@ def getAssets(shotList, assetList, shotState):
             if assetLevel:
                 namespace = namespace.replace("_" + shotState, "")
 
-            mc.file( filePath, r=True, namespace=namespace, ignoreVersion=True)
+            mc.file(filePath, r=True, namespace=namespace, ignoreVersion=True)
 
         rootGroup = namespace + ":root"
         mc.parent(rootGroup, assetGroup)
+
+        # get animations
+        importAnim.importAnim(shotRootFolder, i)
 
     # get assets data if exists
     assetsDataFile = getAssetsData(shotRootFolder, assets)

@@ -3,13 +3,22 @@ import os
 import json
 
 import config
+import jsonReader
+reload(jsonReader)
 reload(config)
 
 def sceneData(shotListView):
     channels = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
     shotData = {}
+    shotPath = getShotpath(shotListView)
 
     setsGroup = "SETS"
+
+    # get shot data if exists
+    if os.path.isfile(shotPath + "sceneData.json"):
+        shotData = jsonReader.jsonRead(shotPath + "sceneData.json")
+
+    print shotData
 
     setChild = mc.listRelatives(setsGroup, children=True)
 
@@ -30,7 +39,6 @@ def sceneData(shotListView):
             shotData[assetName] = {"transform": channelData, "path":getAssetPath(assetName)}
 
     # write out data
-    shotPath = getShotpath(shotListView)
     if not os.path.exists(shotPath):
         os.makedirs(shotPath)
 

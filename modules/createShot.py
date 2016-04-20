@@ -4,6 +4,7 @@ from PySide import QtGui, QtCore
 import maya.cmds as mc
 import json
 import os
+from shutil import copyfile
 
 from ..utils import config
 from ..utils import getAssets
@@ -90,8 +91,18 @@ class CreateShotWindow(QtGui.QDialog):
         self.assetsTree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.assetsTree.customContextMenuRequested.connect(self.deleteAssetMenu)
 
+        # store scene data path for copying shot
+        self.sceneDataFile = None
+
+        # store camera animation for copying shot
+        self.camanimFile = None
+
         if mode == "edit":
             self.editShotMode()
+
+        if mode == "copy":
+            self.copyShot()
+
 
     def refreshContentList(self):
         pass
@@ -136,7 +147,7 @@ class CreateShotWindow(QtGui.QDialog):
 
         shotRootFolder = config.rootFolder
         shotFolder = shotRootFolder + str(self.shotNumberField.text())
-        if self.mode == "new":
+        if self.mode == "new" or self.mode == "copy":
             # make shot folders if not exists
             if not os.path.exists(shotFolder):
                 os.makedirs(shotFolder)
@@ -148,15 +159,59 @@ class CreateShotWindow(QtGui.QDialog):
                 if not os.path.exists(shotFolder + "/" + i):
                     os.makedirs(shotFolder + "/" + i)
 
+
         # write out json data with shot info
         self.saveJson(shotFolder + "/_shotData/")
 
         # add shot number to shot list view
-        if self.mode == "new":
+        if self.mode == "new" or self.mode == "copy":
             self.shotListView.addItem(str(self.shotNumberField.text()))
+            print "New shot was created at: %s" %shotFolder,
 
+        if self.sceneDataFile:
+            fileName = self.sceneDataFile.split("/")[-1]
+            copyfile(self.sceneDataFile, shotFolder + "/_shotData/" + fileName)
+
+            # create camera subfolder
+            if not os.path.exists(shotFolder + "/_anim/camera"):
+                os.makedirs(shotFolder + "/_anim/camera")
+
+            oldShotNumber = self.shotListView.currentItem().text()
+            cameraFileName = self.camanimFile.split("/")[-1]
+            cameraFileName = cameraFileName.replace(oldShotNumber, self.shotNumberField.text())
+            copyfile(self.camanimFile, shotFolder + "/_anim/camera/" + cameraFileName)
 
         self.close()
+
+    def copyShot(self):
+        self.setWindowTitle("Copy Current Shot")
+        try:
+            shotNumber = str(self.shotListView.currentItem().text())
+        except:
+            mc.warning("Select ashot!")
+            return
+
+        self.shotNumberField.setText(shotNumber)
+
+        # get shot data
+        shotRootFolder = config.rootFolder + shotNumber + "/"
+        shotDataFile = shotRootFolder + "_shotData/shotData.json"
+        self.sceneDataFile = shotRootFolder + "_shotData/sceneData.json"
+        self.camanimFile = shotRootFolder + "_anim/camera/shot_%s_anim.ma" %shotNumber
+        shotData = jsonReader.jsonRead(shotDataFile)
+        assets = shotData["assets"]
+        shotRange = shotData["shotRange"]
+        location = shotData["location"]
+
+        self.shotRangeField.setText(shotRange)
+        index = self.shotLocationsCombo.findText(location)
+        self.shotLocationsCombo.setCurrentIndex(index)
+
+        for i in assets:
+            self.fillUpAssetList(i, self.assetsTree)
+
+        # edit button
+        self.createShot_bttn.setText("Create new shot")
 
     def fontSize(self, size, widget):
         font = QtGui.QFont()

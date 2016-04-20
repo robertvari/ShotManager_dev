@@ -13,6 +13,7 @@ from utils import findAssetCategory
 from modules import buildShot
 from utils import jsonReader
 from utils import saveSetsData
+reload(saveAnim)
 reload(saveSetsData)
 reload(jsonReader)
 reload(buildShot)
@@ -50,6 +51,9 @@ class ShotManager(QtGui.QMainWindow):
         saveManu = QtGui.QMenu(self.menubar)
         saveManu.setTitle("Save Data...")
 
+        animationMenu = QtGui.QMenu(self.menubar)
+        animationMenu.setTitle("Animation")
+
         self.setMenuBar(self.menubar)
 
         self.statusbar = QtGui.QStatusBar(self)
@@ -58,30 +62,48 @@ class ShotManager(QtGui.QMainWindow):
         createNew_menu = QtGui.QAction(self)
         editCurrent_menu = QtGui.QAction(self)
         copyCurrent_menu = QtGui.QAction(self)
-        deleteShot_menu = QtGui.QAction(self)
         createNew_menu.setText("Create New Shot")
         editCurrent_menu.setText("Edit Current...")
         copyCurrent_menu.setText("Copy Current")
-        deleteShot_menu.setText("Delete Shot")
         editManu.addAction(createNew_menu)
         editManu.addAction(editCurrent_menu)
         editManu.addAction(copyCurrent_menu)
-        editManu.addAction(deleteShot_menu)
         self.menubar.addAction(editManu.menuAction())
         self.menubar.addAction(saveManu.menuAction())
+        self.menubar.addAction(animationMenu.menuAction())
 
         # save data menu actions
         saveSets_menu = QtGui.QAction(self)
         saveSets_menu.setText("Update SETS Posittion")
+
+        saveManu.addAction(saveSets_menu)
+
+        # animation menu
         saveAnimation_menu = QtGui.QAction(self)
         saveAnimation_menu.setText("Save Animation for selected")
-        saveManu.addAction(saveSets_menu)
-        saveManu.addAction(saveAnimation_menu)
+        importAnimation_menu = QtGui.QAction(self)
+        importAnimation_menu.setEnabled(False)
+        importAnimation_menu.setText("Import Animation for selected")
+        animManager_menu = QtGui.QAction(self)
+        animManager_menu.setText("Animation Manager")
+        animManager_menu.setEnabled(False)
+        saveCamera_menu = QtGui.QAction(self)
+        saveCamera_menu.setText("Save Camera Animation")
+        importCamera_menu = QtGui.QAction(self)
+        importCamera_menu.setEnabled(False)
+        importCamera_menu.setText("Import Camera Animation")
+        animationMenu.addAction(saveAnimation_menu)
+        animationMenu.addAction(importAnimation_menu)
+        animationMenu.addAction(animManager_menu)
+        animationMenu.addSeparator()
+        animationMenu.addAction(saveCamera_menu)
+        animationMenu.addAction(importCamera_menu)
+
 
         createNew_menu.triggered.connect(partial(self.openCreateShotWindow, mode="new"))
         editCurrent_menu.triggered.connect(partial(self.openCreateShotWindow, mode="edit"))
+        copyCurrent_menu.triggered.connect(partial(self.openCreateShotWindow, mode="copy"))
 
-        saveAnimation_menu.triggered.connect(saveAnim.saveAnimation)
         # menubar ----------------------------------------------------
 
         self.gui = GUI(self)
@@ -89,6 +111,10 @@ class ShotManager(QtGui.QMainWindow):
 
         # save sets data action
         saveSets_menu.triggered.connect(partial(saveSetsData.sceneData, self.gui.shotListView))
+
+        # save animation action
+        saveAnimation_menu.triggered.connect(partial(saveAnim.saveAnimation, self.gui.shotListView))
+        saveCamera_menu.triggered.connect(partial(saveAnim.saveAnimation, self.gui.shotListView, cameraAnim=True))
 
     def openCreateShotWindow(self, mode):
         self.createShotWindow = createShot.CreateShotWindow(self.gui.shotListView, self.gui.contentsTreeView, mode)
@@ -127,14 +153,14 @@ class GUI(QtGui.QWidget):
         shotStateGridLayout = QtGui.QGridLayout()
         shotState_lbl = QtGui.QLabel("Shot Version:")
         shotState_lbl.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
-        shotStateCombo = QtGui.QComboBox()
-        for i in shotStates: shotStateCombo.addItem(i)
+        self.shotStateCombo = QtGui.QComboBox()
+        for i in shotStates: self.shotStateCombo.addItem(i)
         shotStateGridLayout.addWidget(shotState_lbl, 0,0)
-        shotStateGridLayout.addWidget(shotStateCombo, 0,1)
+        shotStateGridLayout.addWidget(self.shotStateCombo, 0,1)
         shotsGroupBoxlayout.addLayout(shotStateGridLayout)
 
         buildShot_bttn = QtGui.QPushButton("Build Shot")
-        addAsset_bttn = QtGui.QPushButton("Add Asset to Scene")
+        addAsset_bttn = QtGui.QPushButton("Add Asset to Current Scene")
         shotsGroupBoxlayout.addWidget(buildShot_bttn)
         shotsGroupBoxlayout.addWidget(addAsset_bttn)
 
@@ -163,8 +189,8 @@ class GUI(QtGui.QWidget):
         shotblastsGroupBoxLayout.addWidget(self.shotblastList)
 
         # build shot action
-        buildShot_bttn.clicked.connect(partial(buildShot.buildShot, self.shotListView, self.contentsTreeView, shotStateCombo))
-        addAsset_bttn.clicked.connect(partial(buildShot.addAssetToScene, self.shotListView, self.contentsTreeView, shotStateCombo))
+        buildShot_bttn.clicked.connect(partial(buildShot.buildShot, self.shotListView, self.contentsTreeView, self.shotStateCombo))
+        addAsset_bttn.clicked.connect(partial(buildShot.addAssetToScene, self.shotListView, self.contentsTreeView, self.shotStateCombo))
 
     def openShotblast(self):
         index = self.shotblastList.selectedIndexes()[0]
