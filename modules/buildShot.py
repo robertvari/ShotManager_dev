@@ -6,7 +6,9 @@ from ..utils import jsonReader
 from ..utils import findAssetCategory
 from ..utils import getShotData
 from ..utils import shotCam
+from ..utils import parentConstraint
 import importAnim
+reload(parentConstraint)
 reload(shotCam)
 reload(importAnim)
 reload(getShotData)
@@ -83,6 +85,17 @@ def getAssets(shotList, assetList, shotState):
     if selectedAssets:
         assets = selectedAssets
 
+    # get assets from constraintFile
+    constrainedAssets = []
+    constrainDataFiles = []
+    for i in assets:
+        assetsForConstraint = getAssetsForConstraints(shotRootFolder, i)
+        if assetsForConstraint:
+            for i in assetsForConstraint[0]:
+                constrainedAssets.append(i)
+
+            constrainDataFiles.append(assetsForConstraint[1])
+
     for i in assets:
         # handle duplicated reference
         duplicatedAsset = None
@@ -124,6 +137,55 @@ def getAssets(shotList, assetList, shotState):
     if assetsDataFile:
         assetsData = jsonReader.jsonRead(assetsDataFile)
         transformSets(assetsData)
+
+    if constrainedAssets:
+        setupConstraints(constrainDataFiles)
+
+def getAssetsForConstraints(shotRootFolder, assetName):
+    assetAnimFolder = shotRootFolder + "_anim/" + assetName + "/"
+    constraintDataFile = assetAnimFolder + assetName + "_constraints.json"
+
+    assets = []
+
+    if os.path.isfile(constraintDataFile):
+        constraintData = jsonReader.jsonRead(constraintDataFile)
+
+        for constraint, objects in constraintData.iteritems():
+            assets.append(objects[1].split(":")[0])
+
+    if assets:
+        return assets, constraintDataFile
+    else:
+        return False
+
+def setupConstraints(constrainDataFiles):
+
+    for i in constrainDataFiles:
+        constrainData = jsonReader.jsonRead(i)
+
+        for constraint, objects in constrainData.iteritems():
+            mc.select(objects[0])
+            mc.select(objects[1], add=True)
+
+            constrainNode = parentConstraint.parentConstraint()
+
+            # setup constraint restPose
+            restData = objects[2]
+            rt = restData["restTranslate"]
+            rr = restData["restRotate"]
+
+            restTranslate = [".targetOffsetTranslateX", ".targetOffsetTranslateY", ".targetOffsetTranslateZ"]
+            restRotate = [".targetOffsetRotateX", ".targetOffsetRotateY", ".targetOffsetRotateZ"]
+
+            counter = 0
+            for i in restTranslate:
+                mc.setAttr(constrainNode + ".target[0]" + i, rt[counter])
+                counter +=1
+
+            counter = 0
+            for i in restRotate:
+                mc.setAttr(constrainNode + ".target[0]" + i, rr[counter])
+                counter +=1
 
 def transformSets(setsData):
     channels = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz", ".sx", ".sy", ".sz"]

@@ -13,6 +13,10 @@ from utils import findAssetCategory
 from modules import buildShot
 from utils import jsonReader
 from utils import saveSetsData
+from utils import parentConstraint
+from utils import keyConstraint
+reload(keyConstraint)
+reload(parentConstraint)
 reload(saveAnim)
 reload(saveSetsData)
 reload(jsonReader)
@@ -54,6 +58,9 @@ class ShotManager(QtGui.QMainWindow):
         animationMenu = QtGui.QMenu(self.menubar)
         animationMenu.setTitle("Animation")
 
+        constraintMenu = QtGui.QMenu(self.menubar)
+        constraintMenu.setTitle("Constraints")
+
         self.setMenuBar(self.menubar)
 
         self.statusbar = QtGui.QStatusBar(self)
@@ -71,6 +78,7 @@ class ShotManager(QtGui.QMainWindow):
         self.menubar.addAction(editManu.menuAction())
         self.menubar.addAction(saveManu.menuAction())
         self.menubar.addAction(animationMenu.menuAction())
+        self.menubar.addAction(constraintMenu.menuAction())
 
         # save data menu actions
         saveSets_menu = QtGui.QAction(self)
@@ -99,10 +107,30 @@ class ShotManager(QtGui.QMainWindow):
         animationMenu.addAction(saveCamera_menu)
         animationMenu.addAction(importCamera_menu)
 
+        # constraints menu
+        parentConstraint_menu = QtGui.QAction(self)
+        parentConstraint_menu.setText("Create Parent Constraint")
+        keyConstraintOffmenu = QtGui.QAction(self)
+        keyConstraintOffmenu.setText("Key Constraint to 0")
+        keyConstraintOnmenu = QtGui.QAction(self)
+        keyConstraintOnmenu.setText("Key Constraint to 1")
+        deleteConstraint_menu = QtGui.QAction(self)
+        deleteConstraint_menu.setText("Delete Constraint")
+        constraintMenu.addAction(parentConstraint_menu)
+        constraintMenu.addSeparator()
+        constraintMenu.addAction(keyConstraintOffmenu)
+        constraintMenu.addAction(keyConstraintOnmenu)
+        constraintMenu.addSeparator()
+        constraintMenu.addAction(deleteConstraint_menu)
+
 
         createNew_menu.triggered.connect(partial(self.openCreateShotWindow, mode="new"))
         editCurrent_menu.triggered.connect(partial(self.openCreateShotWindow, mode="edit"))
         copyCurrent_menu.triggered.connect(partial(self.openCreateShotWindow, mode="copy"))
+        parentConstraint_menu.triggered.connect(parentConstraint.parentConstraint)
+        keyConstraintOffmenu.triggered.connect(keyConstraint.keyToOff)
+        keyConstraintOnmenu.triggered.connect(keyConstraint.keyToOn)
+        deleteConstraint_menu.triggered.connect(parentConstraint.deleteConstraint)
 
         # menubar ----------------------------------------------------
 

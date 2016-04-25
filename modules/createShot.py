@@ -103,7 +103,6 @@ class CreateShotWindow(QtGui.QDialog):
         if mode == "copy":
             self.copyShot()
 
-
     def refreshContentList(self):
         pass
 
