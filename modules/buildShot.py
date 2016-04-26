@@ -129,17 +129,19 @@ def getAssets(shotList, assetList, shotState):
         rootGroup = namespace + ":root"
         mc.parent(rootGroup, assetGroup)
 
-        # get animations
-        importAnim.importAnim(shotRootFolder, i)
-
-    # get assets data if exists
+    # place static assets
     assetsDataFile = getAssetsData(shotRootFolder, assets)
     if assetsDataFile:
         assetsData = jsonReader.jsonRead(assetsDataFile)
         transformSets(assetsData)
 
+    # setup constraints
     if constrainedAssets:
         setupConstraints(constrainDataFiles)
+
+    # import animation
+    for i in assets:
+        importAnim.importAnim(shotRootFolder, i)
 
 def getAssetsForConstraints(shotRootFolder, assetName):
     assetAnimFolder = shotRootFolder + "_anim/" + assetName + "/"

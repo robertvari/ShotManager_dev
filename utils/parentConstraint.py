@@ -8,7 +8,12 @@ def parentConstraint():
     if "_DRIVEN" in selection[1]:
         dest = selection[1]
 
+    namespace = source.split(":")[0]
+
     constraintNode = mc.parentConstraint(source, dest, maintainOffset=True)[0]
+
+    # add constraint to source's namespace
+    constraintNode = mc.rename(constraintNode, namespace + ":" + constraintNode)
 
     # add channel to source
     if not mc.objExists(source + ".constraint"):
@@ -16,9 +21,11 @@ def parentConstraint():
         mc.setAttr(source + ".constraint", 1)
 
     # add new channel to character set
-    namespace = source.split(":")[0]
     characterSet = namespace + ":" + "character"
     mc.sets(source + ".constraint", addElement=characterSet)
+
+    constraintChannelsToCharacterSet = [".restTranslateX", ".restTranslateY", ".restTranslateZ", ".restRotateX", ".restRotateY", ".restRotateZ"]
+    for i in constraintChannelsToCharacterSet: mc.sets(constraintNode + i, addElement=characterSet)
 
     # connect source channel to constraint weight
     mc.connectAttr(source + ".constraint", constraintNode + "." + source.split(":")[-1]+"W0")

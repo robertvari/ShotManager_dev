@@ -35,16 +35,7 @@ def importAnim(shotPath, assetName, conSetup=False):
         if newCamNodes:
             newNodes = newCamNodes
 
-        # create constraints and channels based on constraintsData
-        if constraintsData:
-            constraintSetup(constraintsData)
-
         for i in newNodes:
             inChannel = i.split("_")[-1]
             controlName = i.split("_"+inChannel)[0]
             mc.connectAttr(i + ".output", controlName + "." + inChannel)
-
-def constraintSetup(constraintsData):
-    # setup for constraints
-    for constraint, objects in constraintsData.iteritems():
-        mc.addAttr(objects[0], shortName="constraint", attributeType="double", keyable=True, minValue=0, maxValue=1)
