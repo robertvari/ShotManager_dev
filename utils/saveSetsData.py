@@ -18,8 +18,6 @@ def sceneData(shotListView):
     if os.path.isfile(shotPath + "sceneData.json"):
         shotData = jsonReader.jsonRead(shotPath + "sceneData.json")
 
-    print shotData
-
     setChild = mc.listRelatives(setsGroup, children=True)
 
     for i in setChild:

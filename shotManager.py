@@ -15,6 +15,8 @@ from utils import jsonReader
 from utils import saveSetsData
 from utils import parentConstraint
 from utils import keyConstraint
+from modules import shotPreset
+reload(shotPreset)
 reload(keyConstraint)
 reload(parentConstraint)
 reload(saveAnim)
@@ -35,7 +37,7 @@ def getMayaWindow():
         return shiboken.wrapInstance(long(ptr), QtGui.QWidget)
 
 scriptPath = os.path.dirname(__file__)
-version = "0.1"
+version = "0.11"
 
 class ShotManager(QtGui.QMainWindow):
     def __init__(self, parent=None):
@@ -61,6 +63,9 @@ class ShotManager(QtGui.QMainWindow):
         constraintMenu = QtGui.QMenu(self.menubar)
         constraintMenu.setTitle("Constraints")
 
+        self.shotPresetsMenu = QtGui.QMenu(self.menubar)
+        self.shotPresetsMenu.setTitle("Shot Presets")
+
         self.setMenuBar(self.menubar)
 
         self.statusbar = QtGui.QStatusBar(self)
@@ -79,6 +84,7 @@ class ShotManager(QtGui.QMainWindow):
         self.menubar.addAction(saveManu.menuAction())
         self.menubar.addAction(animationMenu.menuAction())
         self.menubar.addAction(constraintMenu.menuAction())
+        self.menubar.addAction(self.shotPresetsMenu.menuAction())
 
         # save data menu actions
         saveSets_menu = QtGui.QAction(self)
@@ -123,6 +129,11 @@ class ShotManager(QtGui.QMainWindow):
         constraintMenu.addSeparator()
         constraintMenu.addAction(deleteConstraint_menu)
 
+        # shot presets menu
+        saveSelection_menu = QtGui.QAction(self)
+        saveSelection_menu.setText("Save Current Asset Selection")
+        self.shotPresetsMenu.addAction(saveSelection_menu)
+        self.shotPresetsMenu.addSeparator()
 
         createNew_menu.triggered.connect(partial(self.openCreateShotWindow, mode="new"))
         editCurrent_menu.triggered.connect(partial(self.openCreateShotWindow, mode="edit"))
@@ -134,7 +145,7 @@ class ShotManager(QtGui.QMainWindow):
 
         # menubar ----------------------------------------------------
 
-        self.gui = GUI(self)
+        self.gui = GUI(self, [self.shotPresetsMenu])
         self.setCentralWidget(self.gui)
 
         # save sets data action
@@ -149,9 +160,11 @@ class ShotManager(QtGui.QMainWindow):
         self.createShotWindow.show()
 
 class GUI(QtGui.QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, menus):
         super(GUI, self).__init__(parent)
 
+        self.mainWindow = parent
+        self.menus = menus
         mainLayout = QtGui.QVBoxLayout()
         self.setLayout(mainLayout)
 
@@ -183,6 +196,12 @@ class GUI(QtGui.QWidget):
         shotState_lbl.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.shotStateCombo = QtGui.QComboBox()
         for i in shotStates: self.shotStateCombo.addItem(i)
+
+        # set combo to default LEVEL 1
+        index = self.shotStateCombo.findText("LEVEL_1", QtCore.Qt.MatchFixedString)
+        if index >= 0:
+             self.shotStateCombo.setCurrentIndex(index)
+
         shotStateGridLayout.addWidget(shotState_lbl, 0,0)
         shotStateGridLayout.addWidget(self.shotStateCombo, 0,1)
         shotsGroupBoxlayout.addLayout(shotStateGridLayout)
@@ -206,6 +225,10 @@ class GUI(QtGui.QWidget):
         contentsGroupBoxLayout.addWidget(self.contentsTreeView)
         self.fontSize(10, self.contentsTreeView)
 
+        # add context menu to contents
+        self.contentsTreeView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.contentsTreeView.customContextMenuRequested.connect(self.saveSelectionAsPresetContext)
+
         # shotblasts groupBox
         shotblastsGroupBox = QtGui.QGroupBox("Shotblasts")
         shotblastsGroupBoxLayout = QtGui.QVBoxLayout(shotblastsGroupBox)
@@ -219,6 +242,20 @@ class GUI(QtGui.QWidget):
         # build shot action
         buildShot_bttn.clicked.connect(partial(buildShot.buildShot, self.shotListView, self.contentsTreeView, self.shotStateCombo))
         addAsset_bttn.clicked.connect(partial(buildShot.addAssetToScene, self.shotListView, self.contentsTreeView, self.shotStateCombo))
+
+    def saveSelectionAsPresetContext(self, point):
+        menu = QtGui.QMenu()
+
+        saveSelectionMenu = menu.addAction("Save Selection As Preset")
+
+        # connect menu actions
+        saveSelectionMenu.triggered.connect(self.saveSelectionAsPreset)
+
+        # show menu
+        menu.exec_(self.contentsTreeView.mapToGlobal(point))
+
+    def saveSelectionAsPreset(self):
+        shotPreset.saveSelection(self.mainWindow, self.contentsTreeView, self.menus[0], self.shotListView)
 
     def openShotblast(self):
         index = self.shotblastList.selectedIndexes()[0]
@@ -264,6 +301,17 @@ class GUI(QtGui.QWidget):
 
         # get content data
         shotDataFile = config.rootFolder + shotName + "/_shotData/shotData.json"
+
+        # clear presets menu
+        self.menus[0].clear()
+
+        # get presets for menu
+        presetsFile = config.rootFolder + shotName + "/_shotData/presets.json"
+        if os.path.isfile(presetsFile):
+            presets = jsonReader.jsonRead(presetsFile)
+
+            for presetName, value in presets.iteritems():
+                shotPreset.addMenuItem(self.mainWindow, self.menus[0], presetName, presetsFile, self.contentsTreeView)
 
         data = jsonReader.jsonRead(shotDataFile)
 
