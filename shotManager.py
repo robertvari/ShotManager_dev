@@ -237,7 +237,9 @@ class GUI(QtGui.QWidget):
         self.shotblastList = QtGui.QTreeView()
         self.shotblastList.doubleClicked.connect(self.openShotblast)
         self.fontSize(11, self.shotblastList)
+        shotblast_bttn = QtGui.QPushButton("Create New Shotblast")
         shotblastsGroupBoxLayout.addWidget(self.shotblastList)
+        shotblastsGroupBoxLayout.addWidget(shotblast_bttn)
 
         # build shot action
         buildShot_bttn.clicked.connect(partial(buildShot.buildShot, self.shotListView, self.contentsTreeView, self.shotStateCombo))

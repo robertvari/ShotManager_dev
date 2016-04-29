@@ -68,9 +68,14 @@ def exportAnim(folderPath, controls, assetName):
     setName = assetName + ":character"
     for i in mc.sets(setName, q=True ):
         animCurve = i.replace(".", "_")
+        if "_target[0]_" in animCurve:
+            animCurve = animCurve.replace("_target[0]_", "_target_0__")
         if mc.objExists(animCurve):
             # parent anim curves to root namespace
             animCurves.append(mc.rename(animCurve, animCurve.split(":")[-1]))
+
+    for i in animCurves:
+        print i
 
     mc.select(cl=True)
     for i in controls:

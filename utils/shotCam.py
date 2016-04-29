@@ -11,6 +11,10 @@ def shotCam(camName, parentGroup):
     mc.setAttr(camShape + ".displayResolution", 1)
     mc.setAttr(camShape + ".overscan", 1.2)
 
+    # setup clippingPlane
+    mc.setAttr(camShape + ".nearClipPlane", 5)
+    mc.setAttr(camShape + ".farClipPlane", 5000)
+
     # add extra channel
     mc.addAttr(shotCam, shortName="focalLength", attributeType="double", minValue=2.5, keyable=True)
     mc.setAttr(shotCam + ".focalLength", 35)

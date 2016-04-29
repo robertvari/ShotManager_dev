@@ -24,7 +24,10 @@ def parentConstraint():
     characterSet = namespace + ":" + "character"
     mc.sets(source + ".constraint", addElement=characterSet)
 
-    constraintChannelsToCharacterSet = [".restTranslateX", ".restTranslateY", ".restTranslateZ", ".restRotateX", ".restRotateY", ".restRotateZ"]
+    constraintChannelsToCharacterSet = [".restTranslateX", ".restTranslateY", ".restTranslateZ", ".restRotateX", ".restRotateY", ".restRotateZ",
+                                        ".target[0].targetOffsetTranslateX", ".target[0].targetOffsetTranslateY", ".target[0].targetOffsetTranslateZ",
+                                        ".target[0].targetOffsetRotateX", ".target[0].targetOffsetRotateY", ".target[0].targetOffsetRotateZ"]
+
     for i in constraintChannelsToCharacterSet: mc.sets(constraintNode + i, addElement=characterSet)
 
     # connect source channel to constraint weight

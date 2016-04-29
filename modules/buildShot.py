@@ -56,6 +56,7 @@ def buildShot(shotList, assetList, shotStateCombo):
     mc.playbackOptions(animationStartTime= animStart)
     mc.playbackOptions(maxTime= animEnd)
     mc.playbackOptions(animationEndTime= animEnd)
+    mc.currentTime( animStart, edit=True )
 
     mc.select(cl=True)
 
@@ -110,6 +111,11 @@ def getAssets(shotList, assetList, shotState):
         assetLevel = False
         if not shotState == "WIP":
             assetState = filePath.replace("_MASTER", "_MASTER_" + shotState)
+
+            # handle .mb to .ma conversion
+            if not os.path.isfile(assetState):
+                assetState = assetState.replace(".mb", ".ma")
+
             if os.path.isfile(assetState):
                 assetLevel = True
                 filePath = assetState
@@ -234,5 +240,8 @@ def getAssetpath(assetName):
                 if i == assetName:
                     folderPath = value + i + "/"
                     masterFile = assetName + "_MASTER.mb"
+
+                    if not os.path.isfile(folderPath + masterFile):
+                        masterFile = assetName + "_MASTER.ma"
 
                     return folderPath + masterFile

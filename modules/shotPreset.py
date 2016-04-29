@@ -8,6 +8,10 @@ reload(getShotData)
 reload(jsonReader)
 
 def saveSelection(mainWindow, assetListView, parentMenu, shotListView):
+    if not assetListView.selectedItems():
+        mc.warning("Select few assets.")
+        return
+
     result = mc.promptDialog(
                 title='Selection',
                 message='Enter Preset Name:',
