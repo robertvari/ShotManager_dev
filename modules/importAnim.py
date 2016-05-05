@@ -38,6 +38,13 @@ def importAnim(shotPath, assetName, conSetup=False):
         for i in newNodes:
             inChannel = i.split("_")[-1]
             controlName = i.split("_"+inChannel)[0]
+
+            if mc.objExists(i + ".control"):
+                controlName = mc.getAttr(i + ".control")
+                inChannel = i.split(controlName)[-1][1::]
+                controlName = assetName + ":" + controlName
+
             if "target_0" in controlName:
                 controlName = controlName.replace("_target_0_", ".target[0]")
+
             mc.connectAttr(i + ".output", controlName + "." + inChannel)

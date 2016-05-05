@@ -67,15 +67,21 @@ def exportAnim(folderPath, controls, assetName):
 
     setName = assetName + ":character"
     for i in mc.sets(setName, q=True ):
-        animCurve = i.replace(".", "_")
-        if "_target[0]_" in animCurve:
-            animCurve = animCurve.replace("_target[0]_", "_target_0__")
-        if mc.objExists(animCurve):
-            # parent anim curves to root namespace
-            animCurves.append(mc.rename(animCurve, animCurve.split(":")[-1]))
+        if mc.listConnections(i, type="animCurve"):
+            animCurve = mc.listConnections(i, type="animCurve")[0]
+            if "_target[0]_" in animCurve:
+                animCurve = animCurve.replace("_target[0]_", "_target_0__")
+            if mc.objExists(animCurve):
+                # add extra channel for import connection
+                controller = mc.listConnections(animCurve)[0].split(":")[-1]
+                if not mc.objExists(animCurve + ".control"): mc.addAttr(animCurve, ln="control", dt="string")
+                if "target_0" in animCurve:
+                    controller = controller + "_target_0_"
 
-    for i in animCurves:
-        print i
+                mc.setAttr(animCurve + ".control", controller, type="string")
+
+                # parent anim curves to root namespace
+                animCurves.append(mc.rename(animCurve, animCurve.split(":")[-1]))
 
     mc.select(cl=True)
     for i in controls:
@@ -85,6 +91,7 @@ def exportAnim(folderPath, controls, assetName):
 
     # add namespace to anim curves
     for i in animCurves:
+        print i
         mc.rename(i, assetName + ":" + i)
 
     # clear selection
