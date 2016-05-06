@@ -14,10 +14,6 @@ def importAnim(shotPath, assetName, conSetup=False):
 
     if os.path.isfile(animFile):
         newCamNodes = []
-        constraintsData = None
-
-        if os.path.isfile(constraintsFile):
-            constraintsData = jsonReader.jsonRead(constraintsFile)
 
         if "camera" in shotPath:
             newNodes = mc.file(animFile, i=True, ignoreVersion=True, returnNewNodes=True)
@@ -36,15 +32,28 @@ def importAnim(shotPath, assetName, conSetup=False):
             newNodes = newCamNodes
 
         for i in newNodes:
-            inChannel = i.split("_")[-1]
-            controlName = i.split("_"+inChannel)[0]
-
-            if mc.objExists(i + ".control"):
-                controlName = mc.getAttr(i + ".control")
-                inChannel = i.split(controlName)[-1][1::]
+            controlName = mc.getAttr(i + ".control")
+            if not newCamNodes:
                 controlName = assetName + ":" + controlName
 
-            if "target_0" in controlName:
-                controlName = controlName.replace("_target_0_", ".target[0]")
+            # build constraints
+            if "constraint" in i:
 
-            mc.connectAttr(i + ".output", controlName + "." + inChannel)
+                # TODO have ot add constraint source/dest data to all constraint animCurves
+
+                source = mc.getAttr(i + ".source")
+                dest = mc.getAttr(i + ".destination")
+
+                constraintNode = mc.parentConstraint(source, dest, maintainOffset=True)[0]
+
+                # add channel to source
+                if not mc.objExists(source + ".constraint"):
+                    mc.addAttr(source, shortName="constraint", attributeType="double", keyable=True, minValue=0, maxValue=1)
+
+                # connect source channel to constraint weight
+                mc.connectAttr(source + ".constraint", constraintNode + "." + source.split(":")[-1]+"W0")
+
+                # add namespace to constraint
+                mc.rename(constraintNode, assetName + ":" + constraintNode)
+
+            mc.connectAttr(i + ".output", controlName)

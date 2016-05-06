@@ -10,27 +10,30 @@ def keyToOff():
     setKeyframe(controller + ".constraint", currentTime, value=0)
 
     # save rest pose on constraint
-    mc.parentConstraint(constraint, edit=True, maintainOffset=True)
-    constraintChannels = [".restTranslateX", ".restTranslateY", ".restTranslateZ", ".restRotateX", ".restRotateY", ".restRotateZ"]
+    mc.parentConstraint(controller, constraint, edit=True, maintainOffset=True)
+    constraintChannels = mc.listConnections(constraint, type="animCurve")
     for i in constraintChannels:
-        value = mc.getAttr(constraint + i)
-        setKeyframe(constraint + i, currentTime, value)
+        value = mc.getAttr(mc.listConnections(i, plugs=True)[0])
+        setKeyframe(mc.listConnections(i, plugs=True)[0], currentTime, value)
 
 def keyToOn():
     controller = mc.ls(sl=True)[0]
     constraint = mc.listConnections(controller + ".constraint", type="constraint")[0]
     currentTime = mc.currentTime( query=True )
 
+    # save rest pose on constraint
+    # mc.currentTime(currentTime-1)
+    constraintChannels = mc.listConnections(constraint, type="animCurve")
+    mc.parentConstraint(controller, constraint, edit=True, maintainOffset=True)
+    for i in constraintChannels:
+        value = mc.getAttr(mc.listConnections(i, plugs=True)[0])
+        setKeyframe(mc.listConnections(i, plugs=True)[0], currentTime, value)
+
     # set key on 1 for controller
     setKeyframe(controller + ".constraint", currentTime-1, value=0)
     setKeyframe(controller + ".constraint", currentTime, value=1)
 
-    # save rest pose on constraint
-    mc.parentConstraint(constraint, edit=True, maintainOffset=True)
-    constraintChannels = [".restTranslateX", ".restTranslateY", ".restTranslateZ", ".restRotateX", ".restRotateY", ".restRotateZ"]
-    for i in constraintChannels:
-        value = mc.getAttr(constraint + i)
-        setKeyframe(constraint + i, currentTime, value)
+    # mc.currentTime( currentTime )
 
 
 def setKeyframe(control, currentTime, value):

@@ -30,10 +30,7 @@ def saveAnimation(shotListView, cameraAnim=False):
         controls = getControls(assetName)
 
         # get anim layers
-        animLayers = getAnimLayers(controls)
-
-        # get constraints and constrained assets
-        getConstraints(folderPath, controls, assetName)
+        # animLayers = getAnimLayers(controls)
 
         # save animation
         createFolder(folderPath)
@@ -69,16 +66,14 @@ def exportAnim(folderPath, controls, assetName):
     for i in mc.sets(setName, q=True ):
         if mc.listConnections(i, type="animCurve"):
             animCurve = mc.listConnections(i, type="animCurve")[0]
-            if "_target[0]_" in animCurve:
-                animCurve = animCurve.replace("_target[0]_", "_target_0__")
-            if mc.objExists(animCurve):
-                # add extra channel for import connection
-                controller = mc.listConnections(animCurve)[0].split(":")[-1]
-                if not mc.objExists(animCurve + ".control"): mc.addAttr(animCurve, ln="control", dt="string")
-                if "target_0" in animCurve:
-                    controller = controller + "_target_0_"
 
-                mc.setAttr(animCurve + ".control", controller, type="string")
+            if mc.objExists(animCurve):
+                connectTo = mc.listConnections(animCurve, plugs=True)[0].split(":")[-1]
+
+                # add extra channel for import connection
+                if not mc.objExists(animCurve + ".control"): mc.addAttr(animCurve, ln="control", dt="string")
+
+                mc.setAttr(animCurve + ".control", connectTo, type="string")
 
                 # parent anim curves to root namespace
                 animCurves.append(mc.rename(animCurve, animCurve.split(":")[-1]))
@@ -91,15 +86,12 @@ def exportAnim(folderPath, controls, assetName):
 
     # add namespace to anim curves
     for i in animCurves:
-        print i
         mc.rename(i, assetName + ":" + i)
 
     # clear selection
     mc.select(cl=True)
 
-def getConstraints(folderPath, controls, assetName):
-    fileName = folderPath + assetName + "_constraints.json"
-
+def getConstraints(controls):
     constraintList = {}
 
     constraints = []
@@ -114,17 +106,19 @@ def getConstraints(folderPath, controls, assetName):
         restData = getConstraintRest(con)
         constraintList[con]=[source, dest, restData]
 
-    if constraints:
-        # backup constraints data
-        if os.path.isfile(fileName):
-            makeBackup(folderPath, fileName)
 
-        # write out jsonData
-        jsonReader.jsonWrite(constraintList, fileName)
-    else:
-        # delete constraints file
-        if os.path.isfile(fileName):
-            os.remove(fileName)
+
+    # if constraints:
+    #     # backup constraints data
+    #     if os.path.isfile(fileName):
+    #         makeBackup(folderPath, fileName)
+    #
+    #     # write out jsonData
+    #     jsonReader.jsonWrite(constraintList, fileName)
+    # else:
+    #     # delete constraints file
+    #     if os.path.isfile(fileName):
+    #         os.remove(fileName)
 
 def getConstraintRest(constraint):
     rt = []
@@ -148,6 +142,14 @@ def exportCameraAnim(folderPath, camName):
     # backup animation
     if os.path.isfile(fileName):
         makeBackup(folderPath, fileName)
+
+    # write data on camera animCurves
+    camAnimCurves = mc.listConnections(camName, type="animCurve")
+    for i in camAnimCurves:
+        if not mc.objExists(i + ".control"): mc.addAttr(i, ln="control", dt="string")
+
+        connectTo = mc.listConnections(i, plugs=True)[0]
+        mc.setAttr(i + ".control", connectTo, type="string")
 
     mc.select(camName)
     mc.file(fileName, type='mayaAscii', exportSelectedAnim=True, f=True)
