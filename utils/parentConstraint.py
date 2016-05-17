@@ -1,30 +1,48 @@
 import maya.cmds as mc
+import maya.mel as mel
 
-def parentConstraint():
+def parentConstraint(nodes=False):
     selection = mc.ls(sl=True)
 
-    source = selection[0]
-    dest = selection[1] + "_DRIVEN"
-    if "_DRIVEN" in selection[1]:
-        dest = selection[1]
+    if not nodes:
+        source = selection[0]
+        dest = selection[1] + "_DRIVEN"
+        if "_DRIVEN" in selection[1]:
+            dest = selection[1]
+    else:
+        source = nodes[0]
+        dest = nodes[1]
+        if "_DRIVEN" in nodes[1]:
+            dest = nodes[1]
 
     namespace = source.split(":")[0]
 
-    constraintNode = mc.parentConstraint(source, dest, maintainOffset=True)[0]
-
-    # add constraint to source's namespace
-    constraintNode = mc.rename(constraintNode, namespace + ":" + constraintNode)
+    constraintNode = mc.parentConstraint(source, dest, name=namespace + ":" + dest.split(":")[-1] + "_constraint", maintainOffset=True)[0]
 
     # add channel to source
-    if not mc.objExists(source + ".constraint"):
-        mc.addAttr(source, shortName="constraint", attributeType="double", keyable=True, minValue=0, maxValue=1)
-        mc.setAttr(source + ".constraint", 1)
+    counter = 0
+    channelName = dest.split(":")[-1]
+
+    targetList = mc.parentConstraint(constraintNode, q=True, targetList=True)
+
+    while counter+1 < len(targetList):
+        counter += 1
+
+    constraintChannel = channelName + str(counter)
+
+    if not mc.objExists(source + "." + constraintChannel):
+        mc.addAttr(source, shortName=constraintChannel, attributeType="double", keyable=True, minValue=0, maxValue=1)
+        mc.setAttr(source + "." + constraintChannel, 1)
+
+        # set channel to 0 if not the first one
+        if counter > 0:
+            mc.setAttr(source + "." + constraintChannel, 0)
 
         # create animCurve for saving constraint data
-        mc.setKeyframe(source + ".constraint")
+        mc.setKeyframe(source + "." + constraintChannel)
 
         # save constraint data on anim curve
-        animCurve = mc.listConnections(source + ".constraint", type="animCurve")[0]
+        animCurve = mc.listConnections(source + "." + constraintChannel, type="animCurve")[0]
         if not mc.objExists(animCurve + ".source"): mc.addAttr(animCurve, ln="source", dt="string")
         mc.setAttr(animCurve + ".source", source, type="string")
         if not mc.objExists(animCurve + ".destination"): mc.addAttr(animCurve, ln="destination", dt="string")
@@ -32,11 +50,11 @@ def parentConstraint():
 
     # add new channel to character set
     characterSet = namespace + ":" + "character"
-    mc.sets(source + ".constraint", addElement=characterSet)
+    mc.sets(source + "." + constraintChannel, addElement=characterSet)
 
     constraintChannelsToCharacterSet = [".restTranslateX", ".restTranslateY", ".restTranslateZ", ".restRotateX", ".restRotateY", ".restRotateZ",
-                                        ".target[0].targetOffsetTranslateX", ".target[0].targetOffsetTranslateY", ".target[0].targetOffsetTranslateZ",
-                                        ".target[0].targetOffsetRotateX", ".target[0].targetOffsetRotateY", ".target[0].targetOffsetRotateZ"]
+                                        ".target[%i].targetOffsetTranslateX" %counter, ".target[%i].targetOffsetTranslateY" %counter, ".target[%i].targetOffsetTranslateZ" %counter,
+                                        ".target[%i].targetOffsetRotateX" %counter, ".target[%i].targetOffsetRotateY" %counter, ".target[%i].targetOffsetRotateZ" %counter,]
 
     for i in constraintChannelsToCharacterSet:
         mc.sets(constraintNode + i, addElement=characterSet)
@@ -45,7 +63,7 @@ def parentConstraint():
         mc.setKeyframe(constraintNode + i)
 
     # connect source channel to constraint weight
-    mc.connectAttr(source + ".constraint", constraintNode + "." + source.split(":")[-1]+"W0")
+    mc.connectAttr(source + "." + constraintChannel, constraintNode + "." + source.split(":")[-1]+"W%i" %counter)
 
     # write data on constraint anim curves for importing animations
     animCurvesOnConstraint = mc.listConnections(constraintNode, type="animCurve")
@@ -57,7 +75,6 @@ def parentConstraint():
         if not mc.objExists(animCurveNode + ".control"): mc.addAttr(animCurveNode, ln="control", dt="string")
         mc.setAttr(animCurveNode + ".control", targetChannel, type="string")
 
-
     mc.select(source)
 
     return constraintNode
@@ -65,10 +82,19 @@ def parentConstraint():
 def deleteConstraint():
     control = mc.ls(sl=True)[0]
 
-    # delete constraint
-    mc.delete(mc.listConnections(control)[0])
+    channelBox = mel.eval('global string $gChannelBoxName; $temp=$gChannelBoxName;')	#fetch maya's main channelbox
+    attrs = mc.channelBox(channelBox, q=True, sma=True)
 
-    # remove channel
-    mc.deleteAttr(control + ".constraint")
+    if attrs:
+        # delete constraint
+        try:
+            constraintNode = mc.listConnections(control + "." + attrs[0], type="constraint")[0]
+            if constraintNode:
+                mc.delete(constraintNode)
+        except:
+            pass
 
-    print "Constraint was deleted from %s" % control
+        # remove channel
+        mc.deleteAttr(control + "." + attrs[0])
+    else:
+        mc.warning("Please select constraint channel.")

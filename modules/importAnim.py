@@ -31,29 +31,17 @@ def importAnim(shotPath, assetName, conSetup=False):
         if newCamNodes:
             newNodes = newCamNodes
 
+        # build constraints
+        for i in newNodes:
+            if mc.objExists(i + ".source"):
+                source = mc.getAttr(i + ".source")
+                dest = mc.getAttr(i + ".destination")
+
+                parentConstraint.parentConstraint(nodes=[source, dest])
+
         for i in newNodes:
             controlName = mc.getAttr(i + ".control")
             if not newCamNodes:
                 controlName = assetName + ":" + controlName
 
-            # build constraints
-            if "constraint" in i:
-
-                # TODO have ot add constraint source/dest data to all constraint animCurves
-
-                source = mc.getAttr(i + ".source")
-                dest = mc.getAttr(i + ".destination")
-
-                constraintNode = mc.parentConstraint(source, dest, maintainOffset=True)[0]
-
-                # add channel to source
-                if not mc.objExists(source + ".constraint"):
-                    mc.addAttr(source, shortName="constraint", attributeType="double", keyable=True, minValue=0, maxValue=1)
-
-                # connect source channel to constraint weight
-                mc.connectAttr(source + ".constraint", constraintNode + "." + source.split(":")[-1]+"W0")
-
-                # add namespace to constraint
-                mc.rename(constraintNode, assetName + ":" + constraintNode)
-
-            mc.connectAttr(i + ".output", controlName)
+            mc.connectAttr(i + ".output", controlName, f=True)
