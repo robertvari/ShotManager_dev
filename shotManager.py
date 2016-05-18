@@ -8,6 +8,7 @@ from functools import partial
 
 from modules import saveAnim
 from modules import createShot
+from modules import importAnim
 from utils import config
 from utils import findAssetCategory
 from modules import buildShot
@@ -16,6 +17,9 @@ from utils import saveSetsData
 from utils import parentConstraint
 from utils import keyConstraint
 from modules import shotPreset
+from utils import getShotData
+reload(getShotData)
+reload(importAnim)
 reload(shotPreset)
 reload(keyConstraint)
 reload(parentConstraint)
@@ -96,7 +100,6 @@ class ShotManager(QtGui.QMainWindow):
         saveAnimation_menu = QtGui.QAction(self)
         saveAnimation_menu.setText("Save Animation for selected")
         importAnimation_menu = QtGui.QAction(self)
-        importAnimation_menu.setEnabled(False)
         importAnimation_menu.setText("Import Animation for selected")
         animManager_menu = QtGui.QAction(self)
         animManager_menu.setText("Animation Manager")
@@ -155,9 +158,21 @@ class ShotManager(QtGui.QMainWindow):
         saveAnimation_menu.triggered.connect(partial(saveAnim.saveAnimation, self.gui.shotListView))
         saveCamera_menu.triggered.connect(partial(saveAnim.saveAnimation, self.gui.shotListView, cameraAnim=True))
 
+        # import animation action
+        importAnimation_menu.triggered.connect(self.importAnimation)
+
     def openCreateShotWindow(self, mode):
         self.createShotWindow = createShot.CreateShotWindow(self.gui.shotListView, self.gui.contentsTreeView, mode)
         self.createShotWindow.show()
+
+    def importAnimation(self):
+        shotPath = getShotData.getShotFolder(self.gui.shotListView)
+        shotNumber = self.gui.shotListView.currentItem().text()
+        assetName = mc.ls(sl=True)[0].split(":")[0]
+
+        importAnim.importAnim(shotPath, assetName)
+
+        mc.inViewMessage( amg='Animation was imported from <hl>%s</hl>.' %shotNumber, pos='midCenter', fade=True )
 
 class GUI(QtGui.QWidget):
     def __init__(self, parent, menus):

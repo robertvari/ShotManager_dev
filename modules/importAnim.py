@@ -7,7 +7,7 @@ from ..utils import parentConstraint
 def importAnim(shotPath, assetName, conSetup=False):
     animFolder = shotPath + "_anim" + "/" + assetName + "/"
     animFile = animFolder + assetName + "_anim.ma"
-    constraintsFile = animFolder + assetName + "_constraints.json"
+    # constraintsFile = animFolder + assetName + "_constraints.json"
 
     if "camera" in shotPath:
         animFile = shotPath + assetName + "_anim.ma"

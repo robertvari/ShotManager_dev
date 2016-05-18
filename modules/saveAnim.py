@@ -41,7 +41,7 @@ def saveAnimation(shotListView, cameraAnim=False):
         camName = "shot_" + shotListView.currentItem().text()
         exportCameraAnim(folderPath, camName)
 
-    print "Animation was saved: " + folderPath,
+    mc.inViewMessage( amg='Animation was saved for <hl>%s</hl>.' %assetName, pos='midCenter', fade=True )
 
 def getAnimLayers(controls):
     animLayers = []
@@ -105,20 +105,6 @@ def getConstraints(controls):
 
         restData = getConstraintRest(con)
         constraintList[con]=[source, dest, restData]
-
-
-
-    # if constraints:
-    #     # backup constraints data
-    #     if os.path.isfile(fileName):
-    #         makeBackup(folderPath, fileName)
-    #
-    #     # write out jsonData
-    #     jsonReader.jsonWrite(constraintList, fileName)
-    # else:
-    #     # delete constraints file
-    #     if os.path.isfile(fileName):
-    #         os.remove(fileName)
 
 def getConstraintRest(constraint):
     rt = []

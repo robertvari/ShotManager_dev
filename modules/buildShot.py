@@ -149,6 +149,8 @@ def getAssets(shotList, assetList, shotState):
     for i in assets:
         importAnim.importAnim(shotRootFolder, i)
 
+    mc.inViewMessage( amg='Shot: <hl>%s</hl>.' %shotNumber, pos='midCenter', fade=True )
+
 def getAssetsForConstraints(shotRootFolder, assetName):
     assetAnimFolder = shotRootFolder + "_anim/" + assetName + "/"
     constraintDataFile = assetAnimFolder + assetName + "_constraints.json"

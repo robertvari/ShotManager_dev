@@ -17,7 +17,10 @@ def parentConstraint(nodes=False):
 
     namespace = source.split(":")[0]
 
-    constraintNode = mc.parentConstraint(source, dest, name=namespace + ":" + dest.split(":")[-1] + "_constraint", maintainOffset=True)[0]
+    try:
+        constraintNode = mc.parentConstraint(source, dest, name=namespace + ":" + dest.split(":")[-1] + "_constraint", maintainOffset=True)[0]
+    except:
+        mc.inViewMessage( amg='Missing controller for creating constraints: \n <hl>%s</hl>.' %dest, pos='midCenter', fade=True )
 
     # add channel to source
     counter = 0
