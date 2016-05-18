@@ -43,5 +43,7 @@ def importAnim(shotPath, assetName, conSetup=False):
             controlName = mc.getAttr(i + ".control")
             if not newCamNodes:
                 controlName = assetName + ":" + controlName
+            else:
+                controlName = assetName + "." + controlName.split(".")[-1]
 
             mc.connectAttr(i + ".output", controlName, f=True)
