@@ -18,6 +18,8 @@ from utils import parentConstraint
 from utils import keyConstraint
 from modules import shotPreset
 from utils import getShotData
+from modules import animManager
+reload(animManager)
 reload(getShotData)
 reload(importAnim)
 reload(shotPreset)
@@ -103,7 +105,6 @@ class ShotManager(QtGui.QMainWindow):
         importAnimation_menu.setText("Import Animation for selected")
         animManager_menu = QtGui.QAction(self)
         animManager_menu.setText("Animation Manager")
-        animManager_menu.setEnabled(False)
         saveCamera_menu = QtGui.QAction(self)
         saveCamera_menu.setText("Save Camera Animation")
         importCamera_menu = QtGui.QAction(self)
@@ -161,9 +162,19 @@ class ShotManager(QtGui.QMainWindow):
         # import animation action
         importAnimation_menu.triggered.connect(self.importAnimation)
 
+        # anim manager window
+        animManager_menu.triggered.connect(self.animManager)
+
     def openCreateShotWindow(self, mode):
         self.createShotWindow = createShot.CreateShotWindow(self.gui.shotListView, self.gui.contentsTreeView, mode)
         self.createShotWindow.show()
+
+    def animManager(self):
+        if self.gui.shotListView.currentItem():
+            self.animManagerWindow = animManager.AnimationManager(self.gui.shotListView)
+            self.animManagerWindow.show()
+        else:
+            mc.warning("Select a shot.")
 
     def importAnimation(self):
         shotPath = getShotData.getShotFolder(self.gui.shotListView)
@@ -230,7 +241,7 @@ class GUI(QtGui.QWidget):
         self.shotListView.itemClicked.connect(self.fillUpContents)
 
         # contents groupBox
-        contentsGroupBox = QtGui.QGroupBox("Contents")
+        contentsGroupBox = QtGui.QGroupBox("Assets")
         contentsGroupBoxLayout = QtGui.QVBoxLayout(contentsGroupBox)
         shotDetailsLayout.addWidget(contentsGroupBox)
 
