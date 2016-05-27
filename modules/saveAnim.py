@@ -41,6 +41,9 @@ def saveAnimation(shotListView, cameraAnim=False):
         camName = "shot_" + shotListView.currentItem().text()
         exportCameraAnim(folderPath, camName)
 
+    if cameraAnim:
+        assetName = "Camera"
+
     mc.inViewMessage( amg='Animation was saved for <hl>%s</hl>.' %assetName, pos='midCenter', fade=True )
 
 def getAnimLayers(controls):
