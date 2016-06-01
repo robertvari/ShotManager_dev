@@ -7,7 +7,9 @@ from ..utils import findAssetCategory
 from ..utils import getShotData
 from ..utils import shotCam
 from ..utils import parentConstraint
+from ..utils import instancer
 import importAnim
+reload(instancer)
 reload(parentConstraint)
 reload(shotCam)
 reload(importAnim)
@@ -207,13 +209,24 @@ def transformSets(setsData):
 
         if mc.objExists(asset):
             count = 0
+
+            # transform referenced asset
             for i in channels:
-                channelValue = value["transform"][count]
+                channelValue = value["transform"][0][count]
                 try:
                     mc.setAttr(asset + i, channelValue)
                     count+=1
                 except:
                     print asset + " >>> Error setting values"
+
+            # create instances
+            if len(value["transform"]) > 1:
+                instanceNumber = len(value["transform"])
+
+                c = 1
+                while c < instanceNumber:
+                    instancer.instancer(asset, transform=value["transform"][c])
+                    c+=1
 
 def getAssetsData(shotRootFolder, assets):
     assetsDataFile = shotRootFolder + "_shotData/sceneData.json"

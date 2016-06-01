@@ -19,6 +19,8 @@ from utils import keyConstraint
 from modules import shotPreset
 from utils import getShotData
 from modules import animManager
+from utils import instancer
+reload(instancer)
 reload(animManager)
 reload(getShotData)
 reload(importAnim)
@@ -61,7 +63,7 @@ class ShotManager(QtGui.QMainWindow):
         editManu.setTitle("Edit")
 
         saveManu = QtGui.QMenu(self.menubar)
-        saveManu.setTitle("Save Data...")
+        saveManu.setTitle("Static Assets")
 
         animationMenu = QtGui.QMenu(self.menubar)
         animationMenu.setTitle("Animation")
@@ -94,9 +96,13 @@ class ShotManager(QtGui.QMainWindow):
 
         # save data menu actions
         saveSets_menu = QtGui.QAction(self)
-        saveSets_menu.setText("Update SETS Posittion")
+        saveSets_menu.setText("Save Assets Transform")
+        createInstance_menu = QtGui.QAction(self)
+        createInstance_menu.setText("Duplicate Selected (Instance)")
 
         saveManu.addAction(saveSets_menu)
+        saveManu.addSeparator()
+        saveManu.addAction(createInstance_menu)
 
         # animation menu
         saveAnimation_menu = QtGui.QAction(self)
@@ -164,6 +170,14 @@ class ShotManager(QtGui.QMainWindow):
 
         # anim manager window
         animManager_menu.triggered.connect(self.animManager)
+
+        # instancer menu action
+        createInstance_menu.triggered.connect(self.makeInstance)
+
+    def makeInstance(self):
+        if mc.ls(sl=True):
+            selectedAsset = mc.ls(sl=True)[0]
+            instancer.instancer(assetName=selectedAsset)
 
     def openCreateShotWindow(self, mode):
         self.createShotWindow = createShot.CreateShotWindow(self.gui.shotListView, self.gui.contentsTreeView, mode)

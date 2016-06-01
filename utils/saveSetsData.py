@@ -9,10 +9,9 @@ reload(config)
 
 def sceneData(shotListView):
     channels = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
-    shotData = {}
     shotPath = getShotpath(shotListView)
-
     setsGroup = "SETS"
+
 
     # get shot data if exists
     if os.path.isfile(shotPath + "sceneData.json"):
@@ -20,21 +19,26 @@ def sceneData(shotListView):
 
     setChild = mc.listRelatives(setsGroup, children=True)
 
-    for i in setChild:
-        mc.select(i, add=True)
+    for item in setChild:
+        if not "instance" in item:
+            assetName = item.split(":")[0]
+            transformData = []
+            data = []
+            for i in channels:
+                data.append(mc.getAttr(item + "." + i))
+            transformData.append(data)
 
-    selection = mc.ls(sl=True)
+            shotData[assetName] = {"transform": transformData}
+        else:
+            assetName = item.split(":")[0]
+            transformData = shotData[assetName]["transform"]
 
-    mc.select(cl=True)
+            data = []
+            for i in channels:
+                data.append(mc.getAttr(item + "." + i))
+            transformData.append(data)
 
-    for item in selection:
-        referenceFile = mc.referenceQuery(mc.referenceQuery(item, rfn=True), filename=True)
-        assetName = referenceFile.replace("_MASTER.mb", "")
-        assetName = assetName.split("/")[-1]
-        channelData = []
-        for i in channels:
-            channelData.append(mc.getAttr(item + "." + i))
-            shotData[assetName] = {"transform": channelData, "path":getAssetPath(assetName)}
+            shotData[assetName] = {"transform": transformData}
 
     # write out data
     if not os.path.exists(shotPath):
